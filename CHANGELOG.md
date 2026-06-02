@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-06-02
+
 ### Added
 - `GenesisEnv` — a `gymnasium.Env` over a Genesis scene, with an injected `SceneDriver` seam.
 - `GenesisRobotDriver` — reference driver: load a URDF/MJCF/USD robot, map a normalised action to a
