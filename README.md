@@ -54,6 +54,21 @@ record_episodes(env, policy=lambda obs: env.action_space.sample(), sink=sink, n_
 A runnable end-to-end example (a Franka arm, no asset download) lives in
 [`examples/record_franka.py`](examples/record_franka.py).
 
+## Quickstart — evaluate a policy in Genesis
+
+`lerobot-genesis-eval` is `lerobot-eval` with the Genesis env registered, so a LeRobot policy
+(ACT, SmolVLA, GR00T, …) can be rolled out in a Genesis scene. Smoke-test the wiring with a
+from-scratch policy (no checkpoint needed):
+
+```bash
+lerobot-genesis-eval --env.type=genesis --policy.type=act \
+    --eval.batch_size=1 --eval.n_episodes=1 --eval.use_async_envs=false --policy.device=cpu
+```
+
+Point `--policy.path` at a trained checkpoint to score it, and `--env.task` at your own registered
+Genesis task. Training GR00T? `lerobot_genesis.groot.write_modality_json` emits the `meta/modality.json`
+it needs.
+
 ## How it's designed
 
 The simulator-specific work sits behind one small `Protocol`, so the Gymnasium contract and the

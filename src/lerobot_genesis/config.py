@@ -1,9 +1,12 @@
 """Register Genesis with LeRobot as ``--env.type=genesis``.
 
-This is the eval/RL seam: a ``@EnvConfig.register_subclass`` so LeRobot's CLI can discover a Genesis
-environment and map its observation keys onto the policy convention. It mirrors LeRobot's own env
-configs (e.g. ``AlohaEnv``). Unlike the rest of the package this module imports ``lerobot`` at load
-time — the registration decorator needs it — so it is imported on demand, not from the package root.
+The eval/RL seam. For a locally registered config, LeRobot's ``make_env`` calls
+``EnvConfig.create_envs``, which runs ``gym.make(gym_id, **gym_kwargs)``. So ``gym_id`` must match a
+``gymnasium.register`` id (see :mod:`lerobot_genesis.tasks`), and the env must emit ``pixels`` and
+``agent_pos`` observations plus an ``info["is_success"]`` flag.
+
+This module imports ``lerobot`` at load time (the decorator needs it) — import it on demand, not
+from the package root.
 """
 
 from __future__ import annotations
@@ -13,7 +16,7 @@ from dataclasses import dataclass, field
 from lerobot.configs.types import FeatureType, PolicyFeature
 from lerobot.envs.configs import ACTION, OBS_IMAGE, OBS_STATE, EnvConfig
 
-_CAMERA = "front"
+from ._constants import GYM_NAMESPACE
 
 
 @EnvConfig.register_subclass("genesis")
@@ -21,12 +24,12 @@ _CAMERA = "front"
 class GenesisEnvConfig(EnvConfig):
     """LeRobot env config for a Genesis scene.
 
-    ``GenesisEnv`` emits ``{"pixels", "agent_pos"}``; ``features_map`` routes those onto LeRobot's
-    convention keys and ``features`` declares their typed shapes. ``action_dim`` / ``state_dim`` and
-    the camera resolution default to a 9-DOF Franka but are meant to be overridden per robot.
+    ``task`` selects the registered gym id (``lerobot_genesis/<task>``); ``features`` and
+    ``features_map`` declare the observation and action layout for the policy. Defaults match the
+    bundled Franka reference task — override ``task`` and the dims to point at your own Genesis env.
     """
 
-    task: str | None = ""
+    task: str | None = "FrankaReach-v0"
     fps: int = 30
     episode_length: int = 300
     action_dim: int = 9
@@ -48,16 +51,17 @@ class GenesisEnvConfig(EnvConfig):
                 ),
             }
         if not self.features_map:
-            self.features_map = {
-                "action": ACTION,
-                "agent_pos": OBS_STATE,
-                "pixels": f"{OBS_IMAGE}.{_CAMERA}",
-            }
+            # GenesisEnv emits one image under "pixels"; preprocess_observation maps a bare "pixels"
+            # array to OBS_IMAGE and "agent_pos" to OBS_STATE.
+            self.features_map = {"action": ACTION, "agent_pos": OBS_STATE, "pixels": OBS_IMAGE}
+
+    @property
+    def package_name(self) -> str:
+        # Override the default "gym_<type>" (= "gym_genesis", an unrelated HF package). Our tasks
+        # register under this package; create_envs imports it if the id isn't already registered.
+        return GYM_NAMESPACE
 
     @property
     def gym_kwargs(self) -> dict[str, object]:
-        return {
-            "task": self.task,
-            "max_episode_steps": self.episode_length,
-            "render_mode": self.render_mode,
-        }
+        # max_episode_steps drives gym.make's TimeLimit; render_mode is forwarded to the env.
+        return {"max_episode_steps": self.episode_length, "render_mode": self.render_mode}

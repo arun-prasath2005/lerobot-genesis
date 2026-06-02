@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- Policy evaluation: `GenesisEnvConfig` (`--env.type=genesis`) + a registered Franka reach reference
+  task + the `lerobot-genesis-eval` launcher, so a LeRobot policy can be rolled out in a Genesis scene
+  via the standard `lerobot-eval` flow.
+- `lerobot_genesis.groot`: `build_modality` / `write_modality_json` to emit the `meta/modality.json`
+  NVIDIA Isaac-GR00T training expects.
+
 ## [0.1.0] - 2026-06-02
 
 ### Added

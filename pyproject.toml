@@ -37,6 +37,10 @@ lerobot = ["lerobot>=0.4"]
 all = ["lerobot-genesis[genesis,lerobot]"]
 dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11"]
 
+[project.scripts]
+# Runs `lerobot-eval` with the Genesis env + reference tasks registered first.
+lerobot-genesis-eval = "lerobot_genesis.eval:main"
+
 [project.urls]
 Homepage = "https://github.com/arun-prasath2005/lerobot-genesis"
 Repository = "https://github.com/arun-prasath2005/lerobot-genesis"
