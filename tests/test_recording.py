@@ -42,7 +42,10 @@ def test_episode_filter_discards_and_rerolls() -> None:
         return calls["n"] % 2 == 0  # reject odd attempts -> each kept episode costs 2 rollouts
 
     frames = record_episodes(
-        env, lambda _obs: np.zeros(6, np.float32), sink, n_episodes=2,
+        env,
+        lambda _obs: np.zeros(6, np.float32),
+        sink,
+        n_episodes=2,
         episode_filter=keep_every_other,
     )
 
@@ -57,8 +60,12 @@ def test_episode_filter_attempt_cap_terminates() -> None:
     sink = FakeSink()
 
     frames = record_episodes(
-        env, lambda _obs: np.zeros(6, np.float32), sink, n_episodes=2,
-        episode_filter=lambda: False, max_attempts_factor=3,
+        env,
+        lambda _obs: np.zeros(6, np.float32),
+        sink,
+        n_episodes=2,
+        episode_filter=lambda: False,
+        max_attempts_factor=3,
     )
 
     assert frames == 0 and sink.episodes == 0  # nothing kept...
