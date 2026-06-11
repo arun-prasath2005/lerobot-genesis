@@ -45,22 +45,40 @@ def record_episodes(
     *,
     n_episodes: int,
     camera: str = "front",
+    episode_filter: Callable[[], bool] | None = None,
+    max_attempts_factor: int = 3,
 ) -> int:
-    """Roll ``policy`` in ``env`` for ``n_episodes``, recording each step; return the frame count.
+    """Roll ``policy`` in ``env`` until ``n_episodes`` episodes are recorded; return frame count.
+
+    ``episode_filter`` (optional) is called after each episode finishes, before it is written:
+    return True to keep it, False to discard and re-roll — demonstration quality curation (e.g.
+    drop scripted-teacher episodes whose task metric came out poor, so the learner imitates only
+    good behavior). The closure typically reads the caller's driver/env state. At most
+    ``n_episodes * max_attempts_factor`` rollouts are attempted, so a too-strict filter
+    terminates.
 
     ``finalize`` is called once at the end — it is mandatory for ``LeRobotDataset`` or the written
     parquet is left incomplete.
     """
     frames = 0
-    for _ in range(n_episodes):
+    kept = 0
+    attempts = 0
+    while kept < n_episodes and attempts < n_episodes * max_attempts_factor:
+        attempts += 1
         obs, _ = env.reset()
+        episode: list[dict[str, Any]] = []
         terminated = truncated = False
         while not (terminated or truncated):
             action = np.asarray(policy(obs), dtype=np.float32)
-            sink.add_frame(make_frame(obs, action, camera=camera))
-            frames += 1
+            episode.append(make_frame(obs, action, camera=camera))
             obs, _, terminated, truncated, _ = env.step(action)
+        if episode_filter is not None and not episode_filter():
+            continue
+        for frame in episode:
+            sink.add_frame(frame)
         sink.save_episode()
+        kept += 1
+        frames += len(episode)
     sink.finalize()
     return frames
 
