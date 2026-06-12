@@ -47,6 +47,7 @@ def record_episodes(
     camera: str = "front",
     episode_filter: Callable[[], bool] | None = None,
     max_attempts_factor: int = 3,
+    finalize: bool = True,
 ) -> int:
     """Roll ``policy`` in ``env`` until ``n_episodes`` episodes are recorded; return frame count.
 
@@ -57,8 +58,10 @@ def record_episodes(
     ``n_episodes * max_attempts_factor`` rollouts are attempted, so a too-strict filter
     terminates.
 
-    ``finalize`` is called once at the end — it is mandatory for ``LeRobotDataset`` or the written
-    parquet is left incomplete.
+    ``finalize`` (default True) calls ``sink.finalize()`` once at the end — mandatory for
+    ``LeRobotDataset`` or the written parquet is left incomplete. Pass ``finalize=False`` when
+    recording in multiple calls against one sink (e.g. several environment variants into one
+    dataset) and finalize yourself after the last call.
     """
     frames = 0
     kept = 0
@@ -79,7 +82,8 @@ def record_episodes(
         sink.save_episode()
         kept += 1
         frames += len(episode)
-    sink.finalize()
+    if finalize:
+        sink.finalize()
     return frames
 
 
@@ -104,11 +108,18 @@ class LeRobotDatasetSink:
         root: str | Path | None = None,
         use_videos: bool = True,
         robot_type: str = "genesis",
+        resume: bool = False,
     ) -> None:
         from lerobot.datasets.lerobot_dataset import LeRobotDataset
 
         h, w, _ = image_shape
         self._task = task
+        if resume:
+            # reopen an existing dataset and keep appending episodes — the same path
+            # `lerobot-record --resume` uses. This is how multi-process recording (e.g. one
+            # simulator process per scene variant) accumulates into ONE dataset.
+            self._dataset = LeRobotDataset(repo_id, root=root)
+            return
         features = {
             f"observation.images.{camera}": {
                 "dtype": "video" if use_videos else "image",

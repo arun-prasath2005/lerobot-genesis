@@ -32,6 +32,19 @@ def test_records_frames_episodes_and_one_finalize() -> None:
     assert all("observation.state" in frame for frame in sink.frames)
 
 
+def test_finalize_false_leaves_the_sink_open() -> None:
+    env = GenesisEnv(FakeDriver(succeed_after=3), max_episode_steps=10)
+    sink = FakeSink()
+
+    record_episodes(env, lambda _obs: np.zeros(6, np.float32), sink, n_episodes=1, finalize=False)
+    record_episodes(env, lambda _obs: np.zeros(6, np.float32), sink, n_episodes=1, finalize=False)
+
+    assert sink.episodes == 2  # two calls accumulated into ONE dataset...
+    assert sink.finalized == 0  # ...which the caller finalizes once, themselves
+    sink.finalize()
+    assert sink.finalized == 1
+
+
 def test_episode_filter_discards_and_rerolls() -> None:
     env = GenesisEnv(FakeDriver(succeed_after=3), max_episode_steps=10)
     sink = FakeSink()
