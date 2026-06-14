@@ -6,6 +6,24 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-06-14
+
+### Added
+- `record_episodes(..., finalize=True)`: pass `finalize=False` to accumulate several recording calls
+  into one sink (e.g. several environment/scene variants into a single dataset), finalizing yourself
+  after the last call.
+- `LeRobotDatasetSink(..., resume=False)`: pass `resume=True` to reopen an existing dataset and keep
+  appending episodes — the same constructor path `lerobot-record --resume` uses. Together with
+  `finalize=False`, this enables multi-process recording (one simulator process per scene variant)
+  into one `LeRobotDataset`.
+
+## [0.3.0] - 2026-06-11
+
+### Added
+- `record_episodes(..., episode_filter=...)`: an optional post-episode predicate for demonstration-
+  quality curation — keep an episode or discard and re-roll it (bounded by `max_attempts_factor`), so
+  the learner only imitates good behavior.
+
 ## [0.2.0] - 2026-06-02
 
 ### Added

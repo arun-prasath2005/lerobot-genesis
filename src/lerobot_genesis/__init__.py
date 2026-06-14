@@ -15,7 +15,7 @@ from .env import GenesisEnv, SceneDriver
 from .groot import EMBODIMENT_TAG_NEW, build_modality, write_modality_json
 from .recording import EpisodeSink, LeRobotDatasetSink, Policy, make_frame, record_episodes
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 __all__ = [
     "EMBODIMENT_TAG_NEW",
